@@ -7,8 +7,6 @@
 
     <!-- dependencies -->
     <script src="bower_components/jquery/dist/jquery.js"></script>
-    <script src="bower_components/underscore/underscore.js"></script>
-    <script src="bower_components/xss/dist/xss.js"></script>
     <script>
       // YOU DO NOT NEED TO EDIT THIS CODE
       if (!/(&|\?)username=/.test(window.location.search)) {
@@ -16,14 +14,14 @@
         if (newSearch !== '' & newSearch !== '?') {
           newSearch += '&';
         }
-        this.username = filterXSS((prompt('What is your name?') || 'anonymous'));
-        newSearch += 'username=' + this.username;
-        // newSearch += 'username=' + (prompt('What is your name?') || 'anonymous');
+        newSearch += 'username=' + (prompt('What is your name?') || 'anonymous');
         window.location.search = newSearch;
       }
     </script>
     <!-- your scripts -->
+    <!-- 
     <script src="env/config.js"></script>
+    -->
     <script src="scripts/app.js"></script>
   </head>
   <body>
@@ -48,5 +46,4 @@
         app.init()
       });
     </script>  </body>
-
 </html>
