@@ -1,3 +1,38 @@
+var url = require('url');
+
+
+// Data storage object
+var database = {
+  results: []
+};
+
+
+var validPaths = {
+  '/classes/messages': true
+};
+
+
+// These headers will allow Cross-Origin Resource Sharing (CORS).
+// This code allows this server to talk to websites that
+// are on different domains, for instance, your chat client.
+//
+// Your chat client is running from a url like file://your/chat/client/index.html,
+// which is considered a different domain.
+//
+// Another way to get around this restriction is to serve you chat
+// client from this domain by setting up static file serving.
+var defaultCorsHeaders = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'access-control-allow-headers': 'content-type, accept',
+  'access-control-max-age': 10 // Seconds.
+};
+
+
+
+
+
+
 /*************************************************************
 
 You should implement your request handler function in this file.
@@ -29,46 +64,102 @@ var requestHandler = function(request, response) {
   // console.logs in your code.
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
 
-  // The outgoing status.
-  var statusCode = 200;
+  var urlParts = url.parse(request.url);
+  var pathname = urlParts.pathname;
+  
 
-  // See the note below about CORS headers.
-  var headers = defaultCorsHeaders;
+  if (!validPaths[pathname]) {
+    var statusCode = 404;
+    var headers = defaultCorsHeaders;
+    headers['Content-Type'] = 'text/plain';
+    response.writeHead(statusCode, headers);
+    response.end(console.log('This resource does not exist'));
+  }  
+  
+  
+  if (request.method === 'GET' || request.method === 'OPTIONS') {
+    // The outgoing status.
+    var statusCode = 200;
 
-  // Tell the client we are sending them plain text.
-  //
-  // You will need to change this if you are sending something
-  // other than plain text, like JSON or HTML.
-  headers['Content-Type'] = 'text/plain';
+    // See the note below about CORS headers.
+    var headers = defaultCorsHeaders;
 
-  // .writeHead() writes to the request line and headers of the response,
-  // which includes the status and all headers.
-  response.writeHead(statusCode, headers);
+    // Tell the client we are sending them plain text.
+    //
+    // You will need to change this if you are sending something
+    // other than plain text, like JSON or HTML.
+    headers['Content-Type'] = 'application/json';
 
-  // Make sure to always call response.end() - Node may not send
-  // anything back to the client until you do. The string you pass to
-  // response.end() will be the body of the response - i.e. what shows
-  // up in the browser.
-  //
-  // Calling .end "flushes" the response's internal buffer, forcing
-  // node to actually send all the data over to the client.
-  response.end('Hello, World!');
+    // .writeHead() writes to the request line and headers of the response,
+    // which includes the status and all headers.
+    response.writeHead(statusCode, headers);
+
+    // Make sure to always call response.end() - Node may not send
+    // anything back to the client until you do. The string you pass to
+    // response.end() will be the body of the response - i.e. what shows
+    // up in the browser.
+    //
+    // Calling .end "flushes" the response's internal buffer, forcing
+    // node to actually send all the data over to the client.
+    response.end(JSON.stringify(database));
+    
+  }
+  
+  if (request.method === 'POST') {
+    
+    var body = '';
+    
+    request.setEncoding('utf8');
+    
+    request.on('data', (chunk) => {
+      body += chunk;
+    });
+    
+    request.on('end', () => {
+      try {
+        var data = JSON.parse(body);
+        database.results.push(data);
+        var statusCode = 201;
+        var headers = defaultCorsHeaders;
+        headers['Content-Type'] = 'text/plain';
+        response.writeHead(statusCode, headers);
+        // response.write(typeof data);
+        response.end(JSON.stringify(database));
+      } catch (er) {
+        response.statusCode = 400;
+        return response.end('error!');
+      }
+      
+      
+    });
+    
+    
+    // var newData = request.data;
+    // fakeData.results.push(newData);
+    
+    // var statusCode = 200;
+
+    // var headers = defaultCorsHeaders;
+
+    // headers['Content-Type'] = 'text/plain';
+
+    // response.writeHead(statusCode, headers);
+
+    // response.end(console.log(request.body));
+    
+    
+  }
+  
+  
+  
+  
+
 };
 
-// These headers will allow Cross-Origin Resource Sharing (CORS).
-// This code allows this server to talk to websites that
-// are on different domains, for instance, your chat client.
-//
-// Your chat client is running from a url like file://your/chat/client/index.html,
-// which is considered a different domain.
-//
-// Another way to get around this restriction is to serve you chat
-// client from this domain by setting up static file serving.
-var defaultCorsHeaders = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'access-control-allow-headers': 'content-type, accept',
-  'access-control-max-age': 10 // Seconds.
-};
+
+
+
+
+
 
 exports.requestHandler = requestHandler;
