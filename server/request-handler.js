@@ -1,5 +1,5 @@
 var url = require('url');
-
+var querystring = require('querystring');
 
 // Data storage object
 var database = {
@@ -69,7 +69,7 @@ var requestHandler = function(request, response) {
   var urlParts = url.parse(request.url);
   var pathname = urlParts.pathname;
   
-  console.log('pathname', pathname);
+  // console.log('pathname', pathname);
   
 
   if (!validPaths[pathname]) {
@@ -124,31 +124,26 @@ var requestHandler = function(request, response) {
     
     request.on('end', () => {
       try {
-        var data = JSON.parse(body);
+        
+        var data;
+        if (body.startsWith('{')) {
+          data = JSON.parse(body);
+        } else {
+          data = querystring.parse(body);
+        }
+        
+        // var data = querystring.parse(body);
         database.results.unshift(data);
+        console.log(database);
         response.end(JSON.stringify(database));
       } catch (er) {
         response.statusCode = 400;
         return response.end('error!');
       }
       
-      
     });
     
-    
-    // var newData = request.data;
-    // fakeData.results.push(newData);
-    
-    // var statusCode = 200;
-
-    // var headers = defaultCorsHeaders;
-
-    // headers['Content-Type'] = 'text/plain';
-
-    // response.writeHead(statusCode, headers);
-
-    // response.end(console.log(request.body));
-    
+  
     
   }
   
