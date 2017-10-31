@@ -1,18 +1,12 @@
 var url = require('url');
 var querystring = require('querystring');
-
-// Data storage object
-var database = {
-  results: [
-  {username: 'Yogi bear', message: 'Hey Boo Boo'}]
-};
-
+var fs = require('fs');
+var dataJson = require('./data.json');
 
 var validPaths = {
   '/classes/messages': true,
   '/': true
 };
-
 
 // These headers will allow Cross-Origin Resource Sharing (CORS).
 // This code allows this server to talk to websites that
@@ -29,11 +23,6 @@ var defaultCorsHeaders = {
   'access-control-allow-headers': 'content-type, accept',
   'access-control-max-age': 10 // Seconds.
 };
-
-
-
-
-
 
 /*************************************************************
 
@@ -69,9 +58,6 @@ var requestHandler = function(request, response) {
   var urlParts = url.parse(request.url);
   var pathname = urlParts.pathname;
   
-  // console.log('pathname', pathname);
-  
-
   if (!validPaths[pathname]) {
     var statusCode = 404;
     var headers = defaultCorsHeaders;
@@ -79,25 +65,26 @@ var requestHandler = function(request, response) {
     response.writeHead(statusCode, headers);
     response.end(console.log('This resource does not exist'));
   }  
-  
-  
-  if (request.method === 'GET' || request.method === 'OPTIONS') {
+  if (request.method === 'OPTIONS') {
+    var statusCode = 200;
+    var headers = defaultCorsHeaders;
+    headers['Content-Type'] = 'text/plain';
+    response.writeHead(statusCode, headers); 
+    response.end();
+  } 
+  if (request.method === 'GET') {
     // The outgoing status.
     var statusCode = 200;
-
     // See the note below about CORS headers.
     var headers = defaultCorsHeaders;
-
     // Tell the client we are sending them plain text.
     //
     // You will need to change this if you are sending something
     // other than plain text, like JSON or HTML.
     headers['Content-Type'] = 'application/json';
-
     // .writeHead() writes to the request line and headers of the response,
     // which includes the status and all headers.
     response.writeHead(statusCode, headers);
-
     // Make sure to always call response.end() - Node may not send
     // anything back to the client until you do. The string you pass to
     // response.end() will be the body of the response - i.e. what shows
@@ -105,57 +92,39 @@ var requestHandler = function(request, response) {
     //
     // Calling .end "flushes" the response's internal buffer, forcing
     // node to actually send all the data over to the client.
-    response.end(JSON.stringify(database));
-    
+    response.end(JSON.stringify(dataJson));
   }
-  
   if (request.method === 'POST') {
-    
     var body = '';
     var statusCode = 201;
     request.setEncoding('utf8');
     var headers = defaultCorsHeaders;
-    headers['Content-Type'] = 'text/plain';
+    headers['Content-Type'] = 'application/json';
     response.writeHead(statusCode, headers);
-    
     request.on('data', (chunk) => {
       body += chunk;
     });
-    
     request.on('end', () => {
       try {
-        console.log(body);
         var data;
         if (body.startsWith('{')) {
           data = JSON.parse(body);
         } else {
           data = querystring.parse(body);
         }
-        
-        // var data = querystring.parse(body);
-        database.results.unshift(data);
-        response.end(JSON.stringify(database));
+        dataJson.results.unshift(data);
+        response.end(JSON.stringify(dataJson));
+        fs.writeFile('./server/data.json', JSON.stringify(dataJson), function(err) {
+          if (err) {
+            throw err;
+          }
+        });
       } catch (er) {
         response.statusCode = 400;
         return response.end('error!');
-      }
-      
+      } 
     });
-    
-  
-    
   }
-  
-  
-  
-  
-
 };
-
-
-
-
-
-
 
 exports.requestHandler = requestHandler;
