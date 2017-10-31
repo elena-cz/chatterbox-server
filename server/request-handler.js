@@ -124,7 +124,7 @@ var requestHandler = function(request, response) {
     
     request.on('end', () => {
       try {
-        
+        console.log(body);
         var data;
         if (body.startsWith('{')) {
           data = JSON.parse(body);
@@ -134,7 +134,6 @@ var requestHandler = function(request, response) {
         
         // var data = querystring.parse(body);
         database.results.unshift(data);
-        console.log(database);
         response.end(JSON.stringify(database));
       } catch (er) {
         response.statusCode = 400;
