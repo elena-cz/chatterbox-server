@@ -3,12 +3,14 @@ var url = require('url');
 
 // Data storage object
 var database = {
-  results: []
+  results: [
+  {username: 'Yogi bear', message: 'Hey Boo Boo'}]
 };
 
 
 var validPaths = {
-  '/classes/messages': true
+  '/classes/messages': true,
+  '/': true
 };
 
 
@@ -67,6 +69,8 @@ var requestHandler = function(request, response) {
   var urlParts = url.parse(request.url);
   var pathname = urlParts.pathname;
   
+  console.log('pathname', pathname);
+  
 
   if (!validPaths[pathname]) {
     var statusCode = 404;
@@ -108,8 +112,11 @@ var requestHandler = function(request, response) {
   if (request.method === 'POST') {
     
     var body = '';
-    
+    var statusCode = 201;
     request.setEncoding('utf8');
+    var headers = defaultCorsHeaders;
+    headers['Content-Type'] = 'text/plain';
+    response.writeHead(statusCode, headers);
     
     request.on('data', (chunk) => {
       body += chunk;
@@ -118,12 +125,7 @@ var requestHandler = function(request, response) {
     request.on('end', () => {
       try {
         var data = JSON.parse(body);
-        database.results.push(data);
-        var statusCode = 201;
-        var headers = defaultCorsHeaders;
-        headers['Content-Type'] = 'text/plain';
-        response.writeHead(statusCode, headers);
-        // response.write(typeof data);
+        database.results.unshift(data);
         response.end(JSON.stringify(database));
       } catch (er) {
         response.statusCode = 400;
