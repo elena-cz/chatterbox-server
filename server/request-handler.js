@@ -62,15 +62,14 @@ var requestHandler = function(request, response) {
   // debugging help, but you should always be careful about leaving stray
   // console.logs in your code.
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
-
   var urlParts = url.parse(request.url);
   var pathname = urlParts.pathname;
-  
+  console.log(request.url);
   if (!validPaths[pathname]) {
     var filePath = './client' + pathname;
  
     if (fs.existsSync(filePath)) {
-      console.log(filePath);
+      // console.log(filePath);
       fs.readFile(filePath, (err, data) => {
         if (err) {     
           response.writeHead(500); response.end('Server Error!');
@@ -78,12 +77,16 @@ var requestHandler = function(request, response) {
         }
         var statusCode = 200;
         // response.write(data.toString());
-        var headers = defaultCorsHeaders;
+        var headers = {};
         headers['Content-Type'] = mimeTypes[path.extname(filePath)];
+        console.log(headers['Content-Type']);
         response.writeHead(statusCode, headers);
         // response.write(data.toString());
         // console.log(data.toString());
-        return response.end(data);
+        // response.write(data);
+        console.log('---------------------------------------',filePath);
+        response.end(data);
+        return;
       });
     } else {
       var statusCode = 404;
@@ -94,8 +97,7 @@ var requestHandler = function(request, response) {
       return;
     }
 
-  }  
-  if (pathname === '/') {
+  } else if (pathname === '/') {
 
     fs.readFile('./client/index.html', (err, data) => {
       if (err) {     
@@ -109,15 +111,13 @@ var requestHandler = function(request, response) {
       response.end(data);
       return;
     });
-  }
-  if (request.method === 'OPTIONS') {
+  } else if (request.method === 'OPTIONS') {
     var statusCode = 200;
     var headers = defaultCorsHeaders;
     headers['Content-Type'] = 'text/plain';
     response.writeHead(statusCode, headers); 
     return response.end();
-  } 
-  if (request.method === 'GET' && pathname !== '/') {
+  } else if (request.method === 'GET' && pathname !== '/') {
     // The outgoing status.
     var statusCode = 200;
     // See the note below about CORS headers.
@@ -138,8 +138,7 @@ var requestHandler = function(request, response) {
     // Calling .end "flushes" the response's internal buffer, forcing
     // node to actually send all the data over to the client.
     return response.end(JSON.stringify(dataJson));
-  }
-  if (request.method === 'POST') {
+  } else if (request.method === 'POST') {
     var body = '';
     var statusCode = 201;
     request.setEncoding('utf8');
