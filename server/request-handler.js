@@ -2,10 +2,18 @@ var url = require('url');
 var querystring = require('querystring');
 var fs = require('fs');
 var dataJson = require('./data.json');
+var path = require('path');
 
 var validPaths = {
   '/classes/messages': true,
   '/': true
+};
+
+var mimeTypes = {
+  '.js': 'text/javascript',
+  '.css': 'text/css',
+  '.html': 'text/html',
+  '.gif': 'image/gif'
 };
 
 // These headers will allow Cross-Origin Resource Sharing (CORS).
@@ -59,20 +67,57 @@ var requestHandler = function(request, response) {
   var pathname = urlParts.pathname;
   
   if (!validPaths[pathname]) {
-    var statusCode = 404;
-    var headers = defaultCorsHeaders;
-    headers['Content-Type'] = 'text/plain';
-    response.writeHead(statusCode, headers);
-    response.end(console.log('This resource does not exist'));
+    var filePath = './client' + pathname;
+ 
+    if (fs.existsSync(filePath)) {
+      console.log(filePath);
+      fs.readFile(filePath, (err, data) => {
+        if (err) {     
+          response.writeHead(500); response.end('Server Error!');
+          return;
+        }
+        var statusCode = 200;
+        // response.write(data.toString());
+        var headers = defaultCorsHeaders;
+        headers['Content-Type'] = mimeTypes[path.extname(filePath)];
+        response.writeHead(statusCode, headers);
+        // response.write(data.toString());
+        // console.log(data.toString());
+        return response.end(data);
+      });
+    } else {
+      var statusCode = 404;
+      var headers = defaultCorsHeaders;
+      headers['Content-Type'] = 'text/plain';
+      response.writeHead(statusCode, headers);
+      response.end(console.log('This resource does not exist'));
+      return;
+    }
+
   }  
+  if (pathname === '/') {
+
+    fs.readFile('./client/index.html', (err, data) => {
+      if (err) {     
+        response.writeHead(500); response.end('Server Error!');
+        return;
+      }
+      var statusCode = 200;
+      var headers = defaultCorsHeaders;
+      headers['Content-Type'] = 'text/html';
+      response.writeHead(statusCode, headers);
+      response.end(data);
+      return;
+    });
+  }
   if (request.method === 'OPTIONS') {
     var statusCode = 200;
     var headers = defaultCorsHeaders;
     headers['Content-Type'] = 'text/plain';
     response.writeHead(statusCode, headers); 
-    response.end();
+    return response.end();
   } 
-  if (request.method === 'GET') {
+  if (request.method === 'GET' && pathname !== '/') {
     // The outgoing status.
     var statusCode = 200;
     // See the note below about CORS headers.
@@ -92,7 +137,7 @@ var requestHandler = function(request, response) {
     //
     // Calling .end "flushes" the response's internal buffer, forcing
     // node to actually send all the data over to the client.
-    response.end(JSON.stringify(dataJson));
+    return response.end(JSON.stringify(dataJson));
   }
   if (request.method === 'POST') {
     var body = '';
